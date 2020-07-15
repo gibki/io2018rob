@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>OI2018 Problem 5 - Robby the Little Robot</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Zilla+Slab" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/themes/prism.min.css" />
+  <style>
+  body {
+    font-family: 'Zilla Slab', serif;
+    font-size: larger;
+    background-color: #F8FAFC;
+    color: #444444;
+    padding-left: 20%;
+    padding-right: 20%;
+  }
+  a {
+    color: #466DB2;
+  }
+  </style>
+</head>
+<body>
+  <h1>Problem 5</h1>
+  <h1><a href="https://szkopul.edu.pl/problemset/problem/p4hlBS7BwoH_rymSj2wtb5_J/site/?key=statement">Robby the Little Robot (ROB)</a></h1>
+
+  <h2>Introduction</h2>
+  <p>This is the second problem we are solving from 2018 Polish Computer Science Olympics. You can check out the article about the first problem here <a href="https://gibki.github.io/io2018par/">https://gibki.github.io/io2018par/</a>.</p>
+  <p>The repository with all the code and example datasets is here: <a href="https://github.com/gibki/io2018rob">https://github.com/gibki/io2018rob</a>.</p>
+
+  <h2>Problem description</h2>
+
+  <p>This time the problem description is almost easy to read. We have a robot starting at point \((0, 0)\), facing North, or the positive values of the \(y\)-axis. We give our robot a program, a list of integers. Each instruction means how far forward will the robot move in this step. It will then turn right 90\(^\circ\) and start executing it's next instruction. If it ever runs out of instructions it starts the program over from the start.</p>
+  <p>Since the robot's program is looped this way, it stops when time runs out instead. Moving one step forward takes one unit of time and turning takes one unit of time. So if the first instruction is 3 the robot will be at the point \((0, 3)\) facing East, or in the positive values of the \(x\)-axis, after 4 units of time.</p>
+  <p>Given the robot's program and allocated time, we are to determine how many times will the robot visit given point \((x, y\)). Let's go over the example given in the problem description.</p>
+  <p>The program is \([2, 3, 1, 2]\) and we are given 28 units of time. The point of interest is \((3, 2)\). Let's just list every point the robot visits. We start facing North at
+  $$(0, 0)$$
+  The first instruction is 2 so we visit
+  $$(0, 1)$$
+  $$(0, 2)$$
+  Then our robot turns right. We have used 3 units of time so far. Next instruction is 3, so we visit
+  $$(1, 2)$$
+  $$(2, 2)$$
+  $$(3, 2)$$
+  And our robot turns right again and is facing South after 7 units of time. Next instruction is just 1 so we move to
+  $$(3, 1)$$
+  and turn West using a total of 9 units of time so far. Last instruction in the program is 2 so we visit
+  $$(2, 1)$$
+  $$(1, 1)$$
+  and turn back North again. We've used 12 units of time and passed over the point of interest once. Now the program starts again:
+  $$(1, 2)$$
+  $$(1, 3)$$
+  $$(2, 3)$$
+  $$(3, 3)$$
+  $$(4, 3)$$
+  $$(4, 2)$$
+  $$(3, 2)$$
+  $$(2, 2)$$
+  Another program cycle has been completed, we have visited \((3, 2)\) one more time and we have 4 more units of time. Our robot moves
+  $$(2, 3)$$
+  $$(2, 4)$$
+  $$(3, 4)$$
+  and we finally run out of time in the middle of an instruction. We've visited the point \((3, 2)\) exactly 2 times, so that is the answer for this dataset.</p>
+  <p>Please note that the first and the last point of the robot's path count, meaning each of the points \((0, 0)\) and \((3, 4)\) has been visited exactly once.</p>
+
+  <h2>Reading in the data</h2>
+
+  <p>This time each file contains only one dataset. The first line of input contains two integers \(n\) and \(t\) separated by a single space, the length of the robot's program and the available time. Second line of input cointains \(n\) integers, each separated by a single space, the robot's program. Finally the third line contains two integers \(x\) and \(y\) separated by a single space, the point of interest.</p>
+  <p>The problem in the example would look like this:</p>
+  <pre class=" language-python"><code class=" language-python">
+  4 28
+  2 3 1 2
+  3 2
+
+  </code></pre>
+  And my first program to simply read in properly formated data and print it back out:
+  <pre class=" language-python"><code class=" language-python">
+  n, t = [int(x) for x in input().split()]
+  d = [int(x) for x in input().split()]
+  x, y = [int(x) for x in input().split()]
+
+  print(n ,t)
+  print(d)
+  print(x, y)
+  </code></pre>
+
+  <h2>One step at a time</h2>
+
+  <p>As we did previously, let's start with bruteforcing our way through the problem. We will simply move our robot one step at a time, comparing it's position with the point \((x, y)\).</p>
+  <p>The most straightforward way to move the robot is to store it's direction and increase or decrease it's horizontal or vertical position based on that value:</p>
+  <pre class=" language-python"><code class=" language-python">
+  ...
+
+  robot_x, robot_y = 0
+  robot_direction = NORTH
+
+  ...
+
+  # move the robot
+  if robot_direction == NORTH:
+      robot_y += 1
+  if robot_direction == EAST:
+      robot_x += 1
+  if robot_direction == SOUTH:
+      robot_y -= 1
+  if robot_direction == WEST:
+      robot_x -= 1
+
+  ...
+  </code></pre>
+  For this to work we will need to change the value if <i>robot_direction</i> in a cycle, NORTH then EAST then SOUTH then WEST then NORTH etc. changing it after every instruction. One way to do it is with the <i>modulo</i> operator:
+  <pre class=" language-python"><code class=" language-python">
+
+  ...
+
+  NORTH, EAST, SOUTH, WEST = 0, 1, 2, 3
+
+  ...
+
+  # turn the robot
+  robot_direction = (robot_direction + 1) % 4
+
+  ...
+
+  </code></pre>
+  <p>After we turn right from facing WEST this evaluates to \(3 + 1 = 4 \equiv 0 (\text{mod } 4)\) and we are back to facing NORTH.</p>
+  <p>When we are moving the robot this way checking when we are visiting the given point \((x, y)\) is very simple. We just need to be careful of an edge case. If inside our loop we first check the point and then move the robot, the very last point would not be checked, so we perform one last check outside of the loop.</p>
+  <p>Here's my attempt at this approach (file <i>rob1.py</i>):</p>
+  <pre class=" language-python"><code class=" language-python">
+  n, t = [int(x) for x in input().split()]
+  d = [int(x) for x in input().split()]
+  x, y = [int(x) for x in input().split()]
+
+
+  NORTH, EAST, SOUTH, WEST = 0, 1, 2, 3
+
+
+  robot_x, robot_y = 0, 0
+  robot_direction = NORTH
+
+
+  visit_counter = 0
+
+  instruction_index = 0
+  while t > 0:
+      distance = d[instruction_index]
+
+      # execute the next instruction
+      while distance > 0 and t > 0:
+          # check if we are visiting the point
+          if (robot_x, robot_y) == (x, y):
+              visit_counter += 1
+
+          # move the robot
+          if robot_direction == NORTH:
+              robot_y += 1
+          if robot_direction == EAST:
+              robot_x += 1
+          if robot_direction == SOUTH:
+              robot_y -= 1
+          if robot_direction == WEST:
+              robot_x -= 1
+
+          # mark step as completed
+          distance -= 1
+          # movement cost
+          t -= 1
+
+      # turn the robot
+      robot_direction = (robot_direction + 1) % 4
+      # pick up the next instruction
+      instruction_index = (instruction_index + 1) % n
+      # right turn cost
+      t -= 1
+
+
+  # edge case at the end
+  if (robot_x, robot_y) == (x, y):
+      visit_counter += 1
+
+
+  print(visit_counter)
+
+  </code></pre>
+  <p>The <i>modulo</i> operator comes in handy again, looping the program for us and not allowing <i>instruction_index</i> to reach beyond the length of the \(d\) list.</p>
+  <p>Notice that you can't get rid of the edge case by moving the robot first and then comparing it's position to the point. In that version the very first point \((0, 0)\) is not checked.</p>
+  <h2>A shift of perspective</h2>
+  <p>The first obvious improvement we can make is getting rid of the inner loop. We don't need to move the robot one step at a time, checking if we are passing over the point of interest at every step. For every instruction the robot is going to visit the point at most once and we can perform this check with some simple arithmetics, then move the robot the whole <i>distance</i> before the next iteration of the main loop. Let's rework the loop first:</p>
+  <pre class=" language-python"><code class=" language-python">
+
+  ...
+
+  instruction_index = 0
+  while t > 0:
+      # make sure we don't exceed t in the middle of an instruction
+      distance = min(d[instruction_index], t)
+
+      # TODO check if we are passing over the point
+
+      # move the robot
+      if robot_direction == NORTH:
+          robot_y += distance
+      if robot_direction == EAST:
+          robot_x += distance
+      if robot_direction == SOUTH:
+          robot_y -= distance
+      if robot_direction == WEST:
+          robot_x -= distance
+
+      # turn the robot
+      robot_direction = (robot_direction + 1) % 4
+      # pick up the next instruction
+      instruction_index = (instruction_index + 1) % n
+      t -= distance + 1  # remember the turn cost
+
+  ...
+
+  </code></pre>
+  <p>The issue is that "simple" arithmetics needed to perform the check get complicated, because the check is slightly different for each direction. This would be one way to do it:</p>
+  <pre class=" language-python"><code class=" language-python">
+
+  ...
+
+  while t > 0:
+
+      ...
+
+    # check if we are passing over the point
+    if robot_direction == NORTH:
+        if robot_x == x and roboty_y <= y < roboty_y + distance:
+            visit_counter +=1
+    if robot_direction == EAST:
+        if robot_y == y and roboty_x <= x < roboty_x + distance:
+            visit_counter +=1
+    if robot_direction == SOUTH:
+        if robot_x == x and roboty_y >= y > roboty_y - distance:
+            visit_counter +=1
+    if robot_direction == WEST:
+        if robot_y == y and roboty_x >= x > roboty_x - distance:
+            visit_counter +=1
+
+    ...
+
+  </code></pre>
+  <p>Take note of the strong inequality \(<\). This is needed so that we don't count the same visit twice if the robot is turning right on the point of interest.</p>
+  <p>While this approach works I think you agree it looks terrible and it's incredibly easy to mess up at least one of those comparisons. There is a better way to this.</p>
+  <p>The idea is to look at the problem from the perspective of our robot. There's now only one direction to consider - forward. When the robot "moves" we can represent it by moving the point of interest, always towards the smaller values of \(y\). When the robot "turns" right 90\(^\circ\), we can instead rotate the point of interest left 90\(^\circ\) around the origin \((0, 0)\). In this point of view we can also get rid of all the variables storing the state of the robot - it's always at position \((0, 0)\) facing North. Here's the updated algorithm (file <i>rob2.py</i>):</p>
+  <pre class=" language-python"><code class=" language-python">
+  n, t = [int(x) for x in input().split()]
+  d = [int(x) for x in input().split()]
+  x, y = [int(x) for x in input().split()]
+
+
+  visit_counter = 0
+
+  instruction_index = 0
+  while t > 0:
+      distance = min(t, d[instruction_index])
+
+      # check if we are passing over the point
+      if x == 0 and 0 <= y < distance:
+          visit_counter += 1
+
+      # "move" the robot by moving the point
+      y -= distance
+      # "turn" the robot by rotating the point LEFT
+      x, y = -y, x
+
+      # pick up the next instruction
+      instruction_index = (instruction_index + 1) % n
+      t -= distance + 1  # remember the turn cost
+
+  # edge case at the end
+  if (x, y) == (0, 0):
+      visit_counter += 1
+
+
+  print(visit_counter)
+
+  </code></pre>
+  <p>To rotate any point \((x, y)\) 90\(^\circ\) left round the origin we use the formula \((x', y') = (-y, x)\). I hope you agree that this looks much better.</p>
+
+  <h2>A linear algorithm?</h2>
+
+  <p>Once again there are two variables that our algorithm's complexity could depend on. If we look closely at our program it should be clear that in the worst case \(t\) goes down by 2 units in each iteration of the loop. We didn't actually improve it by reworking our algorithm. The value of \(n\) has no impact so our algorithm is \(O(t)\). It's hard to beat linear complexity, so are we done?</p>
+  <p>An alarm bell should ring when you see that in the problem description time is not limited like the other variables, but in the grading section we can see that it can be up to \(t \le 10^{18}\). That is a stupidly big number. Meanwhile the length of the program is a timid \(n \le 10^5\).</p>
+  <p>Let's consider this simple dataset:</p>
+  <pre class=" language-python"><code class=" language-python">
+  1 1000000000000000000
+  1
+  2 0
+
+  </code></pre>
+  <p>I don't think you need to perform \(10^{18}\) steps to know that the answer is 0. How about if we get more time in the example dataset?</p>
+  <pre class=" language-python"><code class=" language-python">
+  4 1000000000000000000
+  2 3 1 2
+  3 2
+
+  </code></pre>
+  <p>If you've played with Robby using pen and paper you might have noticed that after he visits the point \((3, 2)\) for the second time at \(t=22\) he keeps moving farther and farther away North (and East), never to visit that point again. For any time \(t \ge 22\) the answer is 2.</p>
+  <p>In both those cases the answer can be produced once we inspect Robby's program, and that answer is largerly independent of \(t\). Our algorithm is linear, but with respect to the wrong variable. With those limits even an \(O(n^3)\) algorithm would be better.</p>
+
+  <h2>Getting to know Robby better</h2>
+
+  <p>Let's see what happens when give Robby different programs. We've already seen that, for example, a program of length 1 makes him spin in a "circle". What about length 2? He will move \(d_0\) units up, then \(d_1\) units right. But now he's facing South and will move \(d_0\) units down and then \(d_1\) units left, so after two cycles of the program he will be back at \((0, 0)\) facing North, right where here started, so he will end up spinning as well.</p>
+  <p>To simplify our reasoning, let's first think about the following two programs:
+  $$[1, 2, 3]$$
+  $$[1, 2, 3, 1, 2, 3]$$
+  Because Robby starts his program over from the start, these two programs take him on the exact same path. Since the answer only depends on the path, the answer for all these programs is the same:
+  $$[\color{red}{d_0}, d_1, ..., d_{n-1}]$$
+  $$[\color{red}{d_0}, d_1, ..., d_{n-1}, \color{red}{d_0}, d_1, ..., d_{n-1}]$$
+  $$[\color{red}{d_0}, d_1, ..., d_{n-1}, \color{red}{d_0}, d_1, ..., d_{n-1}, \color{red}{d_0}, d_1, ..., d_{n-1}]$$
+  $$...$$
+  <p>While it's true that for some lists \(d\) we could use this property to "compress" the program to it's shortest form, it would actually not be that useful. What we really want to do, maybe counterintuitevely, is to extend the program. Our goal is to reduce the problem space to problems where Robby faces North again after a full program cycle. To do that we can just take every input program we get and multiply it 4 times. New program has length divisible by 4 so Robby ends up facing North.</p>
+  <pre class=" language-python"><code class=" language-python">
+  # reduce problem space to n % 4 == 0
+  n, d = 4 * n, 4 * d
+  </code></pre>
+  <p>Now that every program ends with Robby facing North, we want to know where does he end up at the end of the first program cycle.</p>
+  <p>We need every fourth instruction. The sum of all moves North is \(d_0 + d_4 + d_8 + ... + d_{n-4}\). For South it's \(d_2 + d_6 + d_{10} + ... + d_{n-2}\). Analogically, for moves West we have \(d_1 + d_5 + d_9 + ... + d_{n-3}\) and for moves East \(d_3 + d_7 + d_{11} + ... + d_{n-1}\). Python's slicing allows us to sum it up nicely:</p>
+  <pre class=" language-python"><code class=" language-python">
+  program_displacement_x = sum(d[1::4]) - sum(d[3::4])
+  program_displacement_y = sum(d[0::4]) - sum(d[2::4])
+  </code></pre>
+  <p>What happens when this displacement vector is \(p = (p_x, p_y) = (0, 0)\)? After each program cycle Robby ends up at the origin \((0, 0)\) facing North, right when he started. This means he follows exactly the same path in each program cycle.</p>
+  <p>In the only other case each time the program is completed he moves by the <i>program_displacement</i> and will keep on moving in that same direction with each program cycle. This is the case in the example program, where it's displacement vector is \(p = (1, 1)\) and if you track Robby's position at the start of each program cycle it's \((0, 0)\) then \((1, 1)\), \((2, 2)\) etc.</p>
+
+  <h2>Going in circles</h2>
+
+  <p>Let's tackle the easier case first, where Robby takes the same path each cycle. This happens when <i>program_displacement</i> is equal to \((0, 0)\). If we calculate how many program cycles will happen in time \(t\) we can go over the program just once and get the answer to our problem with simple multiplication.</p>
+  <p>We might not have enough time to complete the last cycle fully. The easiest way to handle this is to just go over the program as we did before, but this time with only time leftover after all the full cycles are completed.</p>
+  <p>To get the number of cycles and leftover time we first need to know how much time each full program cycle takes:</p>
+  <pre class=" language-python"><code class=" language-python">
+
+  ...
+
+  program_length = sum(d) + n  # dont forget turn cost
+
+  ...
+
+  </code></pre>
+  <p>We can get the number of cycles and leftover time using integer division and the <i>modulo</i> operator:</p>
+  <pre class=" language-python"><code class=" language-python">
+
+  ...
+
+  cycle_count = t // program_length
+  leftover_t = t % program_length
+
+  ...
+
+  </code></pre>
+  <p>With those values counting visits in cycles is very straightforward. There is no case where \(t\) runs out in the middle of the calculation as it's handled by the <i>leftover_t</i> calculation later. If there is not enough time for a single full pass the value of <i>cycle_count</i> is 0. Here's my version:</p>
+  <pre class=" language-python"><code class=" language-python">
+  n, t = [int(x) for x in input().split()]
+  d = [int(x) for x in input().split()]
+  x, y = [int(x) for x in input().split()]
+
+  # reduce problem space to n % 4 == 0
+  n, d = 4 * n, 4 * d
+
+  program_displacement_x = sum(d[1::4]) - sum(d[3::4])
+  program_displacement_y = sum(d[0::4]) - sum(d[2::4])
+
+  program_length = sum(d) + n  # dont forget turn cost
+  cycle_count = t // program_length
+  leftover_t = t % program_length
+
+  visit_counter = 0
+
+  if (program_displacement_x, program_displacement_y) == (0, 0):
+      # count visits in full program cycles
+      for distance in d:
+          if x == 0 and 0 <= y < distance:
+              visit_counter += cycle_count
+
+          y -= distance
+          x, y = -y, x
+
+      # no edge case at the end of a cycle, it's counted at the start
+  else:
+      # fallback to previous algorithm
+      leftover_t = t
+
+  instruction_index = 0
+  while leftover_t > 0:
+      distance = min(leftover_t, d[instruction_index])
+
+      if x == 0 and 0 <= y < distance:
+          visit_counter += 1
+
+      y -= distance
+      x, y = -y, x
+
+      instruction_index = (instruction_index + 1) % n
+      leftover_t -= distance + 1  # don't forget turn cost
+
+  if (x, y) == (0, 0):
+      visit_counter += 1
+
+  print(visit_counter)
+
+  </code></pre>
+  <p>One slightly tricky thing is that we don't have to preserve the values of \((x, y)\) since the point is guaranteed to return to it's initial position.
+  <p>This version is a major improvement in cases where Robby's program causes him to run around in circles. Even though we are multiplying the program's length by 4 and making multiple passes over it, the total amount of times we are doing so is <i>constant</i> with respect to \(n\), so for this case the complexity is \(O(n)\). You can compare how much faster this version works on <i>in/rob02.in</i> compared to the \(O(t)\) version.
+
+  <h2>Bound for trouble</h2>
+
+  <p>Improving the case where Robby is running away is unfortunatelly not so straightforward. Let's start with a natural idea. In the example dataset, I can quickly decide that after time \(t \ge 22\) Robby will never visit the point of interest again because I can draw a bounding box around Robby, reaching out as far as his program will take him in a single cycle. In the example the bounding box would be 2 top, 3 right, 0 bottom and 0 left. If, like in the example, Robby and his bounding box is moving North East with each loop, we can cut the computation short as soon as the point of interest leaves the bottom or the left edge of this bounding box. The same idea can be used to skip all the cycles when the point of interest is not yet inside the bounding box.</p>
+  <p>This approach would let us solve datasets like the one where Robby spins around and never reaches the point of interest, or like the one where we changed the time in the example to a huge number. But when you are solving problems like this you should always consider the worst case scenario. Here it's the case where the point of interest never leaves the bounding box.</p>
+  <p>It's actually very simple to create a dataset like this. The first four instructions take Robby as far as they can, \(d_0=d_1=d_2=d_3=10^9\). The rest of the program can be whatever you like, but to make things really awkward you should make Robby end his program at \((-1, -1)\) and ask how many times he visits the point \((0, 0)\). This point starts in the bounding box and \(10^9\) cycles of the program later it's still inside.</p>
+  <p>In short, this idea should be discarded as in the worst case it makes no improvement over our initial algorithm. If you are completely out of ideas, implementing it could net you some points in the competition, but I'd be surprised if it was good enought for even 50/100 points. You should be able to realise this, especially since actually coding a working version of this idea is not simple and you might get stuck fixing bugs in a doomed algorithm.</p>
+
+  <h2>Moving target</h2>
+
+  <p>Let's take a closer look at what our algorithm does in the case that the program displacement vector is not zero, \(p = (p_x, p_y), p_x \neq 0 \lor p_y \neq 0\). To make our reasoning simpler, let's only consider the first instruction of the program.</p>
+  <p>In the first cycle of the program, the point of interest is \((x_0, y_0) = (x, y)\). According to our algorithm we are counting a visit if \(x_0=0 \land 0 <= y_0 < d_0\). When the second program cycle starts, Robby moved to \((p_x, p_y)\) but from his point of view the point of interest moved to \((x_1, y_1) = (x - p_x, y - p_y)\), in the third cycle the point moves to \((x_2, y_2) = (x - 2p_x, y - 2p_y)\) etc.</p>
+  <p>If the point moves along the \(x\)-axis, \(p_x \neq 0\), Robby cannot visit the point more than once while executing this instruction. In cases where \(x\) is not divisible by \(p_x\), \(x \not\equiv 0 (\text{mod }p_x)\) the point will "jump" over the \(y\)-axis, never lining up at \(x_k=0\). In the only case where Robby can visit the point it would happen at cycle \(c = {x_0 \over p_x}\) and the \(y\) coordinate would be \(y_c = y_0 - p_y{{x_0} \over {p_x}}\). If that falls within \(d_0\) and happend in cycle \(0 \leq c <\) <i>cycle_count</i> we have the only case where Robby visits the point.
+  <p>If the point is not moving along the \(x\)-axis, \(p_x = 0\), Robby will never visit the point if \(x \neq 0\). If the point does line up at \(x = 0\) it could be visited multiple times. This calculation is slightly involved, so lets pack it into a function. The main loop will look like this:</p>
+  <pre class=" language-python"><code class=" language-python">
+    if program_displacement_x == 0:
+        if x == 0:
+            visit_counter += count_visits_in_line(distance, y, program_displacement_y, cycle_count)
+    else:
+        if x % program_displacement_x == 0:
+            visit_cycle = x // program_displacement_x
+            visit_y = y - program_displacement_y * visit_cycle
+            if 0 <= visit_cycle < cycle_count and \
+               0 <= visit_y < distance:
+                visit_counter += 1
+  </code></pre>
+  <p>For the <i>count_visits_in_line function, </i>the question is how many of points
+  $$y_0 = y, y_1 = y - p_y, y_2 = y - 2p_y, ..., y_{c-1} = y - (c-1)p_y$$
+  fall within the range \([0, \text{distance})\), that is including 0 but excluding <i>distance</i>. To simplify we will reduce the problem to cases where \(p_y \ge 0\) by flipping and shifting the position of y.</p>
+  <pre class=" language-python"><code class=" language-python">
+  def count_visits_in_line(distance, point, program_displacement, cycle_count):
+      if program_displacement < 0:
+          program_displacement *= -1
+          point = -point + distance - 1  # flip, shift by distance, adjust open range side
+
+      if point < 0:
+          return 0
+
+      ...
+  </code></pre>
+  <p>This immediately allows us to exclude all the cases where none of the points fall within the specified range.</p>
+  <p>We can calculate how many of those points lie on the right side of our left boundary 0, \(y_k \ge 0\). We can then in the same manner calculate how many of those points lie on the right side of our right boundary <i>distance</i>, \(y_k - \text{distance} \ge 0\). Subtract the latter from the former and we have our answer.</p>
+  <p>We can use integer division to come up with the right answer. This gives us the answer excluding the starting point, so in both cases we will need to manually add one. We will also have to limit the computed values. The list of points is at most <i>cycle_count</i> long, so that limits both calculations. If we are given a point that starts within our range the second calculation turns negative, so we need another limit there:</p>
+  <pre class=" language-python"><code class=" language-python"></code>
+  def count_visits_in_line(distance, point, program_displacement, cycle_count):
+
+      ...
+
+      count_left_boundary = min(cycle_count, point // program_displacement + 1)
+      count_right_boundary = min(cycle_count, max((point - distance) // program_displacement + 1, 0))
+
+      return count_left_boundary - count_right_boundary
+  </code></pre>
+  <p>Using this approach we can calculate visits for every instruction in <i>constant</i> time, so the complexity of our algorithm is \(O(n)\) even for cases when \(p=(p_x, p_y) \neq (0, 0)\). Just some minor cleanup left and we are done. We need to calculate the position of the point in the final incomplete pass of the program. In the full version below I merged our previous \(p=(p_x, p_y)=(0, 0)\) case into one loop. I also made the program multiplication at the very start conditional so that we don't spend four times as long when it's not needed. I'll leave it to you to figure out why <i>program_displacement</i> calculation is not needed in some cases (file <i>rob.py</i>):</p>
+  <pre class=" language-python"><code class=" language-python">
+  n, t = [int(x) for x in input().split()]
+  d = [int(x) for x in input().split()]
+  x, y = [int(x) for x in input().split()]
+
+  # reduce problem space to cases where n % 4 = 0
+  program_displacement_x, program_displacement_y = 0, 0
+  if n % 4 == 1 or n % 4 == 3:
+      n, d = 4 * n, 4 * d
+  elif n % 4 == 2:
+      n, d = 2 * n, 2 * d
+  else:
+      program_displacement_x = sum(d[1::4]) - sum(d[3::4])
+      program_displacement_y = sum(d[0::4]) - sum(d[2::4])
+
+
+  program_length = sum(d) + n  # don't forget about turn cost
+
+  cycle_count = t // program_length
+  leftover_t = t % program_length
+  leftover_x, leftover_y = x - cycle_count * program_displacement_x, y - cycle_count * program_displacement_y
+
+
+  def count_visits_in_line(distance, point, program_displacement, cycle_count):
+      if program_displacement < 0:
+          program_displacement *= -1
+          point = -point + distance -  1
+
+      if point < 0:
+          return 0
+
+      count_left_boundary = min(cycle_count, point // program_displacement + 1)
+      count_right_boundary = min(cycle_count, max(0, (point - distance) // program_displacement + 1))
+
+      return count_left_boundary - count_right_boundary
+
+
+  visit_counter = 0
+
+  for distance in d:
+      if program_displacement_x == 0:
+          if x == 0:
+              if program_displacement_y == 0:
+                  if 0 <= y < distance:
+                      visit_counter += cycle_count
+              else:
+                  visit_counter += count_visits_in_line(distance, y, program_displacement_y, cycle_count)
+
+      else:
+          if x % program_displacement_x == 0:
+              visit_cycle = x // program_displacement_x
+              visit_y = y - visit_cycle * program_displacement_y
+              if 0 <= visit_cycle < cycle_count and \
+                  0 <= visit_y < distance:
+                  visit_counter += 1
+
+      # move robot
+      y -= distance
+      # turn robot right
+      x, y = -y, x
+      # dont forget to turn the displacement vector for the next instruction
+      program_displacement_x, program_displacement_y = -program_displacement_y, program_displacement_x
+
+
+  instruction_index = 0
+  while leftover_t > 0:
+      distance = min(leftover_t, d[instruction_index])
+
+      if leftover_x == 0 and 0 <= leftover_y < distance:
+          visit_counter += 1
+
+      leftover_y -= distance
+      leftover_x, leftover_y = -leftover_y, leftover_x
+
+      instruction_index += 1
+      leftover_t -= distance + 1
+
+
+  if (leftover_x, leftover_y) == (0, 0):
+      visit_counter += 1
+
+
+  print(visit_counter)
+  </code></pre>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML" async></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/prism.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/components/prism-python.min.js"></script>
+</body>
+</html>
